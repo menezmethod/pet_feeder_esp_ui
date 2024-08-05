@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_blue/flutter_blue.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 
@@ -13,8 +15,27 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Pet Feeder Control',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Color(0xFF7FDFD4),
+        primaryColor: Color(0xFF40798C),
+        scaffoldBackgroundColor: Color(0xFFCFD7C7),
+        colorScheme: ColorScheme(
+          primary: Color(0xFF40798C),
+          primaryContainer: Color(0xFF70A9A1),
+          secondary: Color(0xFF0B2027),
+          secondaryContainer: Color(0xFF40798C),
+          surface: Color(0xFFF6F1D1),
+          background: Color(0xFFCFD7C7),
+          error: Colors.red,
+          onPrimary: Colors.white,
+          onSecondary: Colors.white,
+          onSurface: Colors.black,
+          onBackground: Colors.black,
+          onError: Colors.white,
+          brightness: Brightness.light,
+        ),
+        textTheme: TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFF0B2027)),
+          bodyMedium: TextStyle(color: Color(0xFF0B2027)),
+        ),
       ),
       home: PetFeederPage(),
     );
@@ -29,7 +50,6 @@ class PetFeederPage extends StatefulWidget {
 class _PetFeederPageState extends State<PetFeederPage> {
   late MqttService mqttService;
   bool isConnected = false;
-  bool isSchedulingEnabled = true;
   List<Schedule> schedules = [
     Schedule(hour: 8, minute: 0, enabled: true),
     Schedule(hour: 18, minute: 0, enabled: true),
@@ -80,14 +100,12 @@ class _PetFeederPageState extends State<PetFeederPage> {
   void _updateScheduleStatus(String payload) {
     Map<String, dynamic> status = json.decode(payload);
     setState(() {
-      isSchedulingEnabled = status['enabled'];
       schedules = (status['schedules'] as List).map((s) => Schedule.fromJson(s)).toList();
     });
   }
 
   void _sendUpdatedSchedule() {
     String scheduleJson = json.encode({
-      'enabled': isSchedulingEnabled,
       'schedules': schedules.map((s) => s.toJson()).toList(),
     });
     _publishMessage('feeder/schedule', scheduleJson);
@@ -116,20 +134,29 @@ class _PetFeederPageState extends State<PetFeederPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         elevation: 0,
-        title: Text('Wi-Fi Pet Feeder', style: TextStyle(color: Colors.white)),
+        title: Text('Crawler Pet Feeder', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SettingsPage(mqttService: mqttService),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Color(0xFF7FDFD4),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
+                color: Theme.of(context).colorScheme.primaryContainer,
               ),
               child: Center(
                 child: Column(
@@ -139,11 +166,11 @@ class _PetFeederPageState extends State<PetFeederPage> {
                       width: 200,
                       height: 200,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.surface,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
-                        icon: Icon(Icons.pets, size: 80, color: Color(0xFF7FDFD4)),
+                        icon: Icon(Icons.pets, size: 80, color: Theme.of(context).colorScheme.primaryContainer),
                         onPressed: () {
                           _publishMessage('feeder/feed', '');
                         },
@@ -152,7 +179,7 @@ class _PetFeederPageState extends State<PetFeederPage> {
                     SizedBox(height: 20),
                     Text(
                       'Feed Now',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18),
                     ),
                   ],
                 ),
@@ -161,19 +188,9 @@ class _PetFeederPageState extends State<PetFeederPage> {
           ),
           Container(
             padding: EdgeInsets.all(20),
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             child: Column(
               children: [
-                SwitchListTile(
-                  title: Text('Enable Scheduling'),
-                  value: isSchedulingEnabled,
-                  onChanged: (value) {
-                    setState(() {
-                      isSchedulingEnabled = value;
-                    });
-                    _sendUpdatedSchedule();
-                  },
-                ),
                 ...schedules.asMap().entries.map((entry) {
                   int idx = entry.key;
                   Schedule schedule = entry.value;
@@ -193,10 +210,26 @@ class _PetFeederPageState extends State<PetFeederPage> {
                 }).toList(),
                 SizedBox(height: 20),
                 Text('Connection Status: ${isConnected ? 'Connected' : 'Disconnected'}'),
-                ElevatedButton(
-                  onPressed: mqttService.connect,
-                  child: Text('Reconnect'),
-                ),
+                if (!isConnected)
+                  Column(
+                    children: [
+                      SizedBox(height: 10),
+                      SvgPicture.asset(
+                        'assets/noun-reconnect-3547862.svg',
+                        height: 50,
+                        width: 50,
+                        color: Colors.red,
+                      ),
+                      SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: mqttService.connect,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                        ),
+                        child: Text('Reconnect'),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -378,7 +411,8 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                         });
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isAM ? Colors.blue : Colors.grey,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                     SizedBox(height: 10),
@@ -390,7 +424,8 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                         });
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: !_isAM ? Colors.blue : Colors.grey,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   ],
@@ -406,6 +441,10 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
                 ElevatedButton(
                   child: Text('OK'),
@@ -413,6 +452,10 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                     final selectedHour = (_isAM && _hour == 12) ? 0 : (_isAM ? _hour : _hour + 12);
                     Navigator.of(context).pop(TimeOfDay(hour: selectedHour % 24, minute: _minute));
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ],
             ),
@@ -447,6 +490,189 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
           },
         ),
       ],
+    );
+  }
+}
+
+class SettingsPage extends StatefulWidget {
+  static const routeName = '/settings';
+  final MqttService mqttService;
+
+  SettingsPage({required this.mqttService});
+
+  @override
+  _SettingsPageState createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  bool isBluetoothConnected = false;
+  FlutterBlue flutterBlue = FlutterBlue.instance;
+  BluetoothDevice? connectedDevice;
+  BluetoothCharacteristic? wifiCharacteristic;
+  String ssid = '';
+  String password = '';
+  bool isSchedulingEnabled = true;
+  int portionSize = 100;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> _connectToBluetoothDevice() async {
+    setState(() {
+      isBluetoothConnected = false;
+    });
+
+    try {
+      await flutterBlue.startScan(timeout: Duration(seconds: 5));
+      var subscription = flutterBlue.scanResults.listen((scanResult) async {
+        for (ScanResult result in scanResult) {
+          if (result.device.name == 'ESP_FEEDER') {
+            flutterBlue.stopScan();
+            connectedDevice = result.device;
+            await connectedDevice!.connect();
+            var services = await connectedDevice!.discoverServices();
+            var service = services.firstWhere((s) => s.uuid.toString() == '00FF');
+            wifiCharacteristic = service.characteristics.firstWhere((c) => c.uuid.toString() == 'FF01');
+
+            setState(() {
+              isBluetoothConnected = true;
+            });
+            break;
+          }
+        }
+      });
+      await subscription.cancel();
+    } catch (e) {
+      print("Error starting scan: $e");
+    }
+  }
+
+  Future<void> _showWifiSettingsDialog() async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Wi-Fi Settings'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'SSID'),
+                onChanged: (value) {
+                  ssid = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Password'),
+                onChanged: (value) {
+                  password = value;
+                },
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: isBluetoothConnected ? () {
+                _sendWifiCredentials();
+                Navigator.of(context).pop();
+              } : null,
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _sendWifiCredentials() async {
+    if (connectedDevice != null && wifiCharacteristic != null) {
+      String credentials = 'ssid:$ssid,pass:$password';
+      await wifiCharacteristic!.write(utf8.encode(credentials));
+      await wifiCharacteristic!.write(utf8.encode("reboot")); // This command reboots the Wi-Fi on the ESP32
+    }
+  }
+
+  void _sendPortionSize() {
+    // MQTT message to set the portion size
+    print('Sending portion size: $portionSize');
+    widget.mqttService.publish('feeder/serving_size', portionSize.toString());
+  }
+
+  void _sendGlobalSchedulingStatus() {
+    print('Sending global scheduling status: ${isSchedulingEnabled ? 'enabled' : 'disabled'}');
+    widget.mqttService.publish('feeder/scheduling_enable', isSchedulingEnabled ? '1' : '0');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Settings'),
+      ),
+      body: ListView(
+        children: [
+          ListTile(
+            title: Text('Set up Bluetooth'),
+            trailing: Icon(Icons.bluetooth),
+            onTap: _connectToBluetoothDevice,
+          ),
+          ListTile(
+            title: Text('Wi-Fi Settings'),
+            trailing: Icon(Icons.wifi),
+            onTap: isBluetoothConnected ? _showWifiSettingsDialog : null,
+          ),
+          ListTile(
+            title: Text('Set Portion Size'),
+            trailing: Icon(Icons.food_bank),
+            onTap: () async {
+              int? result = await showDialog<int>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Set Portion Size'),
+                    content: TextField(
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        portionSize = int.tryParse(value) ?? portionSize;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Enter portion size',
+                      ),
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(portionSize);
+                        },
+                        child: Text('Save'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (result != null) {
+                setState(() {
+                  portionSize = result;
+                });
+                _sendPortionSize();
+              }
+            },
+          ),
+          SwitchListTile(
+            title: Text('Enable Global Scheduling'),
+            value: isSchedulingEnabled,
+            onChanged: (value) {
+              setState(() {
+                isSchedulingEnabled = value;
+              });
+              _sendGlobalSchedulingStatus();
+            },
+          ),
+        ],
+      ),
     );
   }
 }
