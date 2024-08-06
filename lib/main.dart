@@ -50,6 +50,8 @@ class PetFeederPage extends StatefulWidget {
 class _PetFeederPageState extends State<PetFeederPage> {
   late MqttService mqttService;
   bool isConnected = false;
+  bool isSchedulingEnabled = true;
+  int servingSize = 1000;
   List<Schedule> schedules = [
     Schedule(hour: 8, minute: 0, enabled: true),
     Schedule(hour: 18, minute: 0, enabled: true),
@@ -86,29 +88,52 @@ class _PetFeederPageState extends State<PetFeederPage> {
   void _onMessageReceived(String topic, String payload) {
     if (topic == 'feeder/schedule_status') {
       _updateScheduleStatus(payload);
+    } else if (topic == 'feeder/serving_size') {
+      setState(() {
+        servingSize = int.parse(payload);
+      });
+    } else if (topic == 'feeder/scheduling_enable') {
+      setState(() {
+        isSchedulingEnabled = payload == '1' || payload.toLowerCase() == 'true';
+      });
     }
   }
 
-  void _publishMessage(String topic, String message) {
-    mqttService.publish(topic, message);
-  }
-
   void _getScheduleStatus() {
-    _publishMessage('feeder/get_schedule', '');
+    mqttService.publish('feeder/get_schedule', '');
   }
 
   void _updateScheduleStatus(String payload) {
     Map<String, dynamic> status = json.decode(payload);
     setState(() {
-      schedules = (status['schedules'] as List).map((s) => Schedule.fromJson(s)).toList();
+      isSchedulingEnabled = status['enabled'];
+      schedules = (status['schedules'] as List)
+          .map((s) => Schedule.fromJson(s))
+          .toList();
     });
   }
 
   void _sendUpdatedSchedule() {
     String scheduleJson = json.encode({
+      'enabled': isSchedulingEnabled,
       'schedules': schedules.map((s) => s.toJson()).toList(),
     });
-    _publishMessage('feeder/schedule', scheduleJson);
+    mqttService.publish('feeder/schedule', scheduleJson);
+  }
+
+  void _toggleSchedule(int index, bool value) {
+    setState(() {
+      schedules[index].enabled = value;
+    });
+    _sendUpdatedSchedule();
+  }
+
+  void _toggleGlobalScheduling(bool value) {
+    setState(() {
+      isSchedulingEnabled = value;
+    });
+    mqttService.publish('feeder/scheduling_enable', value.toString());
+    _sendUpdatedSchedule();
   }
 
   Future<void> _showCustomTimePicker(BuildContext context, int index) async {
@@ -116,7 +141,8 @@ class _PetFeederPageState extends State<PetFeederPage> {
       context: context,
       builder: (BuildContext context) {
         return CustomTimePicker(
-          initialTime: TimeOfDay(hour: schedules[index].hour, minute: schedules[index].minute),
+          initialTime: TimeOfDay(
+              hour: schedules[index].hour, minute: schedules[index].minute),
         );
       },
     );
@@ -144,7 +170,17 @@ class _PetFeederPageState extends State<PetFeederPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => SettingsPage(mqttService: mqttService),
+                  builder: (context) => SettingsPage(
+                    mqttService: mqttService,
+                    isSchedulingEnabled: isSchedulingEnabled,
+                    onSchedulingEnabledChanged: _toggleGlobalScheduling,
+                    portionSize: servingSize,
+                    onPortionSizeChanged: (value) {
+                      setState(() {
+                        servingSize = value;
+                      });
+                    },
+                  ),
                 ),
               );
             },
@@ -172,7 +208,7 @@ class _PetFeederPageState extends State<PetFeederPage> {
                       child: IconButton(
                         icon: Icon(Icons.pets, size: 80, color: Theme.of(context).colorScheme.primaryContainer),
                         onPressed: () {
-                          _publishMessage('feeder/feed', '');
+                          mqttService.publish('feeder/feed', '');
                         },
                       ),
                     ),
@@ -198,12 +234,7 @@ class _PetFeederPageState extends State<PetFeederPage> {
                     title: Text(formatTime(schedule.hour, schedule.minute)),
                     trailing: Switch(
                       value: schedule.enabled,
-                      onChanged: (value) {
-                        setState(() {
-                          schedules[idx].enabled = value;
-                        });
-                        _sendUpdatedSchedule();
-                      },
+                      onChanged: (value) => _toggleSchedule(idx, value),
                     ),
                     onTap: () => _showCustomTimePicker(context, idx),
                   );
@@ -497,8 +528,18 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
 class SettingsPage extends StatefulWidget {
   static const routeName = '/settings';
   final MqttService mqttService;
+  final bool isSchedulingEnabled;
+  final Function(bool) onSchedulingEnabledChanged;
+  final int portionSize;
+  final Function(int) onPortionSizeChanged;
 
-  SettingsPage({required this.mqttService});
+  SettingsPage({
+    required this.mqttService,
+    required this.isSchedulingEnabled,
+    required this.onSchedulingEnabledChanged,
+    required this.portionSize,
+    required this.onPortionSizeChanged,
+  });
 
   @override
   _SettingsPageState createState() => _SettingsPageState();
@@ -511,12 +552,14 @@ class _SettingsPageState extends State<SettingsPage> {
   BluetoothCharacteristic? wifiCharacteristic;
   String ssid = '';
   String password = '';
-  bool isSchedulingEnabled = true;
-  int portionSize = 100;
+  late bool isSchedulingEnabled;
+  late int portionSize;
 
   @override
   void initState() {
     super.initState();
+    isSchedulingEnabled = widget.isSchedulingEnabled;
+    portionSize = widget.portionSize;
   }
 
   Future<void> _connectToBluetoothDevice() async {
@@ -596,36 +639,30 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _sendPortionSize() {
-    // MQTT message to set the portion size
-    print('Sending portion size: $portionSize');
     widget.mqttService.publish('feeder/serving_size', portionSize.toString());
-  }
-
-  void _sendGlobalSchedulingStatus() {
-    print('Sending global scheduling status: ${isSchedulingEnabled ? 'enabled' : 'disabled'}');
-    widget.mqttService.publish('feeder/scheduling_enable', isSchedulingEnabled ? '1' : '0');
+    widget.onPortionSizeChanged(portionSize);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        title: Text('Settings', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: ListView(
         children: [
           ListTile(
-            title: Text('Set up Bluetooth'),
+            title: Text('Set up Bluetooth', style: TextStyle(fontWeight: FontWeight.bold)),
             trailing: Icon(Icons.bluetooth),
             onTap: _connectToBluetoothDevice,
           ),
           ListTile(
-            title: Text('Wi-Fi Settings'),
+            title: Text('Wi-Fi Settings', style: TextStyle(fontWeight: FontWeight.bold)),
             trailing: Icon(Icons.wifi),
             onTap: isBluetoothConnected ? _showWifiSettingsDialog : null,
           ),
           ListTile(
-            title: Text('Set Portion Size'),
+            title: Text('Set Portion Size', style: TextStyle(fontWeight: FontWeight.bold)),
             trailing: Icon(Icons.food_bank),
             onTap: () async {
               int? result = await showDialog<int>(
@@ -662,13 +699,14 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
           SwitchListTile(
-            title: Text('Enable Global Scheduling'),
+            title: Text('Enable Global Scheduling', style: TextStyle(fontWeight: FontWeight.bold)),
             value: isSchedulingEnabled,
             onChanged: (value) {
               setState(() {
                 isSchedulingEnabled = value;
               });
-              _sendGlobalSchedulingStatus();
+              widget.onSchedulingEnabledChanged(value);
+              widget.mqttService.publish('feeder/scheduling_enable', value.toString());
             },
           ),
         ],
