@@ -25,7 +25,13 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final surfaceColor = theme.colorScheme.surface;
+    final onSurfaceColor = theme.colorScheme.onSurface;
+
     return Dialog(
+      backgroundColor: surfaceColor,
       child: Container(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -33,7 +39,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
           children: [
             Text(
               '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')} ${_isAM ? 'AM' : 'PM'}',
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: onSurfaceColor),
             ),
             SizedBox(height: 20),
             Row(
@@ -63,6 +69,14 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                   children: [
                     ElevatedButton(
                       child: Text('AM'),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                          _isAM ? primaryColor : theme.colorScheme.secondary,
+                        ),
+                        foregroundColor: MaterialStateProperty.all(
+                          _isAM ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
+                        ),
+                      ),
                       onPressed: () {
                         setState(() {
                           _isAM = true;
@@ -72,6 +86,14 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                     SizedBox(height: 10),
                     ElevatedButton(
                       child: Text('PM'),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                          !_isAM ? primaryColor : theme.colorScheme.secondary,
+                        ),
+                        foregroundColor: MaterialStateProperty.all(
+                          !_isAM ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
+                        ),
+                      ),
                       onPressed: () {
                         setState(() {
                           _isAM = false;
@@ -88,15 +110,28 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
               children: [
                 ElevatedButton(
                   child: Text('Cancel'),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(theme.colorScheme.secondary),
+                    foregroundColor: MaterialStateProperty.all(theme.colorScheme.onSecondary),
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
                 ElevatedButton(
                   child: Text('OK'),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(primaryColor),
+                    foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                  ),
                   onPressed: () {
-                    final selectedHour = (_isAM && _hour == 12) ? 0 : (_isAM ? _hour : _hour + 12);
-                    Navigator.of(context).pop(TimeOfDay(hour: selectedHour % 24, minute: _minute));
+                    int selectedHour;
+                    if (_isAM) {
+                      selectedHour = _hour == 12 ? 0 : _hour;
+                    } else {
+                      selectedHour = _hour == 12 ? 12 : _hour + 12;
+                    }
+                    Navigator.of(context).pop(TimeOfDay(hour: selectedHour, minute: _minute));
                   },
                 ),
               ],
@@ -113,20 +148,23 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     required int maxValue,
     required ValueChanged<int> onChanged,
   }) {
+    final theme = Theme.of(context);
+    final onSurfaceColor = theme.colorScheme.onSurface;
+
     return Column(
       children: [
         IconButton(
-          icon: Icon(Icons.arrow_upward),
+          icon: Icon(Icons.arrow_upward, color: onSurfaceColor),
           onPressed: () {
             onChanged((value + 1 > maxValue) ? minValue : value + 1);
           },
         ),
         Text(
           value.toString().padLeft(2, '0'),
-          style: TextStyle(fontSize: 24),
+          style: TextStyle(fontSize: 24, color: onSurfaceColor),
         ),
         IconButton(
-          icon: Icon(Icons.arrow_downward),
+          icon: Icon(Icons.arrow_downward, color: onSurfaceColor),
           onPressed: () {
             onChanged((value - 1 < minValue) ? maxValue : value - 1);
           },
