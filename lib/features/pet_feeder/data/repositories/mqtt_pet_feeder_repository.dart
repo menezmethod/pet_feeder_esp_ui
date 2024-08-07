@@ -36,7 +36,7 @@ class MqttPetFeederRepository implements PetFeederRepository {
 
   @override
   Future<void> feedNow() async {
-    _mqttService.publish('feeder/feed', '');
+    _mqttService.publish('pet_feeder_esp32/v1/commands/feed', '');
   }
 
   @override
@@ -46,7 +46,7 @@ class MqttPetFeederRepository implements PetFeederRepository {
       final scheduleJson = json.encode({
         'schedules': schedules.map((s) => s.toJson()).toList(),
       });
-      _mqttService.publish('feeder/schedule', scheduleJson);
+      _mqttService.publish('pet_feeder_esp32/v1/settings/schedule', scheduleJson);
     }
   }
 
@@ -54,7 +54,7 @@ class MqttPetFeederRepository implements PetFeederRepository {
   Future<void> updateServingSize(int servingSize) async {
     if (_currentServingSize != servingSize) {
       _currentServingSize = servingSize;
-      _mqttService.publish('feeder/serving_size', servingSize.toString());
+      _mqttService.publish('pet_feeder_esp32/v1/settings/serving_size', servingSize.toString());
     }
   }
 
@@ -62,13 +62,14 @@ class MqttPetFeederRepository implements PetFeederRepository {
   Future<void> updateSchedulingEnabled(bool enabled) async {
     if (_currentSchedulingEnabled != enabled) {
       _currentSchedulingEnabled = enabled;
-      _mqttService.publish('feeder/scheduling_enable', enabled.toString());
+      _mqttService.publish('pet_feeder_esp32/v1/settings/scheduling_enable', enabled.toString());
     }
   }
 
   @override
   Future<void> requestInitialData() async {
-    _mqttService.publish('feeder/get_status', '');
+    _mqttService.publish('pet_feeder_esp32/v1/requests/get_status', '');
+    _mqttService.publish('pet_feeder_esp32/v1/requests/get_schedule', '');
   }
 
   @override
@@ -85,21 +86,21 @@ class MqttPetFeederRepository implements PetFeederRepository {
       _mqttService.connectionStatus.map((status) => status == MqttConnectionState.connected);
 
   void _subscribeToTopics() {
-    _mqttService.subscribe('feeder/#');
+    _mqttService.subscribe('pet_feeder_esp32/v1/#');
   }
 
   void _handleMessage(ReceivedMessage message) {
     switch (message.topic) {
-      case 'feeder/schedule_status':
+      case 'pet_feeder_esp32/v1/status/schedule':
         _handleScheduleStatus(message.payload);
         break;
-      case 'feeder/serving_size':
+      case 'pet_feeder_esp32/v1/settings/serving_size':
         _handleServingSize(message.payload);
         break;
-      case 'feeder/scheduling_enable':
+      case 'pet_feeder_esp32/v1/settings/scheduling_enable':
         _handleSchedulingEnabled(message.payload);
         break;
-      case 'feeder/status':
+      case 'pet_feeder_esp32/v1/status/general':
         _handleStatus(message.payload);
         break;
     }
@@ -130,14 +131,9 @@ class MqttPetFeederRepository implements PetFeederRepository {
 
   void _handleStatus(String payload) {
     final status = json.decode(payload);
-    final schedules = (status['schedules'] as List)
-        .map((s) => Schedule.fromJson(s))
-        .toList();
     if (status.containsKey('servingSize')) {
       _currentServingSize = status['servingSize'];
       _servingSizeStreamController.add(status['servingSize']);
-      _currentSchedules = schedules;
-      _scheduleStreamController.add(schedules);
     }
   }
 
