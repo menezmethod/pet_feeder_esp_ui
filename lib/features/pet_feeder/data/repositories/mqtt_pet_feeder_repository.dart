@@ -130,14 +130,9 @@ class MqttPetFeederRepository implements PetFeederRepository {
 
   void _handleStatus(String payload) {
     final status = json.decode(payload);
-    final schedules = (status['schedules'] as List)
-        .map((s) => Schedule.fromJson(s))
-        .toList();
     if (status.containsKey('servingSize')) {
       _currentServingSize = status['servingSize'];
       _servingSizeStreamController.add(status['servingSize']);
-      _currentSchedules = schedules;
-      _scheduleStreamController.add(schedules);
     }
   }
 
