@@ -1,43 +1,142 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
+# Flutter & Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
+build/
+flutter_export_environment.sh
+flutter_export_environment.bat
+.pubspect.lock
+.dart_tool/
+.dart_tool/
 
-# IntelliJ related
+# Android Studio
+.idea/
 *.iml
 *.ipr
 *.iws
 .idea/
+.gradle/
+local.properties
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Miscellaneous
+*.log
+*.tmp
+*.swp
+*.DS_Store
+*.sublime-workspace
+*.vscode/
+*.sublime-project
+*.swp
+*~
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Android
+android/app/debug
+android/app/profile
+android/app/release
+android/app/google-services.json
+android/local.properties
+android/.gradle
+android/.idea
+
+# iOS
+ios/Pods/
+ios/Flutter/.last_build_id
+ios/.generated/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/ServiceDefinitions.json
+ios/Runner.xcworkspace
+ios/Flutter/App.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/.last_build_id
+ios/Flutter/ephemeral/Flutter-*
+
+# Web
+web/.dart_tool/
+web/ios/Flutter/Generated.xcconfig
+web/ios/Flutter/ephemeral/.last_build_id
+web/ios/Flutter/flutter_assets
+web/ios/Flutter/App.framework
+
+# macOS
+macos/.dart_tool/
+macos/Flutter/Generated.xcconfig
+macos/Flutter/ephemeral/.last_build_id
+macos/Flutter/flutter_assets
+macos/Flutter/App.framework
+macos/.flutter-plugins
+macos/.flutter-plugins-dependencies
+macos/Flutter/GeneratedPluginRegistrant.*
+macos/Pods/
+
+# Windows
+windows/flutter/ephemeral
+
+# Linux
+linux/flutter/ephemeral
+linux/.dart_tool/
+linux/.flutter-plugins
+linux/.flutter-plugins-dependencies
+linux/Flutter/GeneratedPluginRegistrant.*
+linux/Flutter/ephemeral/.last_build_id
+linux/Flutter/flutter_assets
+linux/Flutter/App.framework
+
+# Intellij related
+*.iml
+.idea/
+.idea/*
+
+# VS Code
+.vscode/
+
+# Miscellaneous
+*.swp
+*~
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
+.flutter-versions
+build/
+packages/
+.packages
 .pub/
-/build/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+.pub-cache/
+pointers.yaml
+dependency_overrides.yaml
+pubspec.lock
+pointers.lock
+.dart_tool/
+flutter_export_environment.bat
+flutter_export_environment.sh
+.idea/
+*.iml
+build/
+*.apk
+*.ap_
+*.keystore
+*.jks
+pubspec.lock
+.pubspect.lock
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+.idea/
+*.iml
+.gradle/
+local.properties
+flutter_export_environment.sh
+flutter_export_environment.bat
+pubspec.lock
+pubspec.yaml
+README.md
+LICENSE
+.gitignore

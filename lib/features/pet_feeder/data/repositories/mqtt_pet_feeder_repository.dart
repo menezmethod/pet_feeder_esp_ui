@@ -11,6 +11,10 @@ class MqttPetFeederRepository implements PetFeederRepository {
   final _servingSizeStreamController = StreamController<int>.broadcast();
   final _schedulingEnabledStreamController = StreamController<bool>.broadcast();
 
+  List<Schedule> _currentSchedules = [];
+  int _currentServingSize = 0;
+  bool _currentSchedulingEnabled = false;
+
   MqttPetFeederRepository(this._mqttService) {
     _mqttService.connectionStatus.listen((status) {
       if (status == MqttConnectionState.connected) {
@@ -37,20 +41,29 @@ class MqttPetFeederRepository implements PetFeederRepository {
 
   @override
   Future<void> updateSchedule(List<Schedule> schedules) async {
-    final scheduleJson = json.encode({
-      'schedules': schedules.map((s) => s.toJson()).toList(),
-    });
-    _mqttService.publish('feeder/schedule', scheduleJson);
+    if (!_areSchedulesEqual(_currentSchedules, schedules)) {
+      _currentSchedules = List.from(schedules);
+      final scheduleJson = json.encode({
+        'schedules': schedules.map((s) => s.toJson()).toList(),
+      });
+      _mqttService.publish('feeder/schedule', scheduleJson);
+    }
   }
 
   @override
   Future<void> updateServingSize(int servingSize) async {
-    _mqttService.publish('feeder/serving_size', servingSize.toString());
+    if (_currentServingSize != servingSize) {
+      _currentServingSize = servingSize;
+      _mqttService.publish('feeder/serving_size', servingSize.toString());
+    }
   }
 
   @override
   Future<void> updateSchedulingEnabled(bool enabled) async {
-    _mqttService.publish('feeder/scheduling_enable', enabled.toString());
+    if (_currentSchedulingEnabled != enabled) {
+      _currentSchedulingEnabled = enabled;
+      _mqttService.publish('feeder/scheduling_enable', enabled.toString());
+    }
   }
 
   @override
@@ -97,24 +110,42 @@ class MqttPetFeederRepository implements PetFeederRepository {
     final schedules = (status['schedules'] as List)
         .map((s) => Schedule.fromJson(s))
         .toList();
+    _currentSchedules = schedules;
     _scheduleStreamController.add(schedules);
+    _currentSchedulingEnabled = status['enabled'];
     _schedulingEnabledStreamController.add(status['enabled']);
   }
 
   void _handleServingSize(String payload) {
     final servingSize = int.parse(payload);
+    _currentServingSize = servingSize;
     _servingSizeStreamController.add(servingSize);
   }
 
   void _handleSchedulingEnabled(String payload) {
     final enabled = payload == '1' || payload.toLowerCase() == 'true';
+    _currentSchedulingEnabled = enabled;
     _schedulingEnabledStreamController.add(enabled);
   }
 
   void _handleStatus(String payload) {
     final status = json.decode(payload);
+    final schedules = (status['schedules'] as List)
+        .map((s) => Schedule.fromJson(s))
+        .toList();
     if (status.containsKey('servingSize')) {
+      _currentServingSize = status['servingSize'];
       _servingSizeStreamController.add(status['servingSize']);
+      _currentSchedules = schedules;
+      _scheduleStreamController.add(schedules);
     }
+  }
+
+  bool _areSchedulesEqual(List<Schedule> a, List<Schedule> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].toJson() != b[i].toJson()) return false;
+    }
+    return true;
   }
 }

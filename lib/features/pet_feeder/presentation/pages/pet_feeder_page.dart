@@ -13,7 +13,7 @@ class PetFeederPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CrawFeed'),
+        title: Text('Crawler Pet Feeder'),
         actions: [
           IconButton(
             icon: Icon(Icons.settings),
@@ -66,9 +66,6 @@ class PetFeederPage extends StatelessWidget {
                   stream: provider.scheduleStream,
                   initialData: provider.schedules,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
-                    }
                     if (snapshot.hasError) return Text('Error: ${snapshot.error}');
                     final schedules = snapshot.data ?? [];
                     return Column(

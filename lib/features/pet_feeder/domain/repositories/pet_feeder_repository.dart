@@ -7,7 +7,6 @@ abstract class PetFeederRepository {
   Future<void> updateSchedule(List<Schedule> schedules);
   Future<void> updateServingSize(int servingSize);
   Future<void> updateSchedulingEnabled(bool enabled);
-  Future<void> requestInitialData();
   Stream<List<Schedule>> get scheduleStream;
   Stream<int> get servingSizeStream;
   Stream<bool> get schedulingEnabledStream;
