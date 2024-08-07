@@ -54,6 +54,11 @@ class MqttPetFeederRepository implements PetFeederRepository {
   }
 
   @override
+  Future<void> requestInitialData() async {
+    _mqttService.publish('feeder/get_status', '');
+  }
+
+  @override
   Stream<List<Schedule>> get scheduleStream => _scheduleStreamController.stream;
 
   @override
