@@ -83,20 +83,30 @@ class MqttService {
     print('MQTT: Publishing to $topic: $message');
     final builder = MqttClientPayloadBuilder();
     builder.addString(message);
-    _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+    final messageId = _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+    print('MQTT: Published message with ID: $messageId');
   }
 
   void _onConnected() {
     print('MQTT: Connected');
     _connectionStateController.add(MqttConnectionState.connected);
+
+    Map<String, String> lastMessages = {};
+
     _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final recMess = c[0].payload as MqttPublishMessage;
-      final message = ReceivedMessage(
-        c[0].topic,
-        MqttPublishPayload.bytesToStringAsString(recMess.payload.message),
-      );
-      print('MQTT: Received message - Topic: ${message.topic}, Payload: ${message.payload}');
-      _messageController.add(message);
+      final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+      final message = ReceivedMessage(c[0].topic, pt);
+      final messageId = recMess.variableHeader?.messageIdentifier ?? -1;
+      final qos = recMess.header?.qos ?? MqttQos.atMostOnce;
+
+      if (lastMessages[message.topic] != message.payload) {
+        lastMessages[message.topic] = message.payload;
+        print('MQTT: Received message - Topic: ${message.topic}, Payload: ${message.payload}, Message ID: $messageId, QoS: $qos');
+        _messageController.add(message);
+      } else {
+        print('MQTT: Ignored duplicate message - Topic: ${message.topic}, Payload: ${message.payload}, Message ID: $messageId, QoS: $qos');
+      }
     });
   }
 

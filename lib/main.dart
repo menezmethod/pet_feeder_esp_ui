@@ -42,29 +42,28 @@ void main() {
           },
         ),
       ],
-      child: MyApp(),
+      child: CrawFeed(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class CrawFeed extends StatelessWidget {
+  const CrawFeed({super.key});
 
   @override
   Widget build(BuildContext context) {
-    print('Building MyApp...');
+    print('Building CrawFeed...');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('Connecting MqttService...');
-      Provider.of<MqttService>(context, listen: false).connect();
+      final mqttService = Provider.of<MqttService>(context, listen: false);
+      mqttService.connect().then((_) {
+        mqttService.publish('feeder/get_status', '');
+      });
     });
 
     return MaterialApp(
       title: 'Pet Feeder Control',
       theme: AppTheme.lightTheme,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => PetFeederPage(),
-      },
+      home: PetFeederPage(),
     );
   }
 }

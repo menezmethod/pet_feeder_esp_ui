@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../../domain/models/schedule.dart';
 import '../../domain/repositories/pet_feeder_repository.dart';
@@ -9,10 +11,7 @@ class PetFeederProvider with ChangeNotifier {
     connect();
   }
 
-  List<Schedule> _schedules = [
-    Schedule(hour: 8, minute: 0, enabled: true),
-    Schedule(hour: 18, minute: 0, enabled: true),
-  ];
+  List<Schedule> _schedules = [];
   List<Schedule> get schedules => _schedules;
 
   bool _isSchedulingEnabled = true;
@@ -40,7 +39,11 @@ class PetFeederProvider with ChangeNotifier {
     await _repository.connect();
     _repository.connectionStatusStream.listen((status) {
       _isConnected = status;
-      print('Connection status updated: $status');
+      if (status) {
+        Timer(const Duration(milliseconds: 200), () {
+          requestInitialData();
+        });
+      }
       notifyListeners();
     });
     _repository.scheduleStream.listen((schedules) {
@@ -83,6 +86,10 @@ class PetFeederProvider with ChangeNotifier {
   Future<void> updateSchedulingEnabled(bool enabled) async {
     print('Updating scheduling enabled...');
     await _repository.updateSchedulingEnabled(enabled);
+  }
+
+  Future<void> requestInitialData() async {
+    await _repository.requestInitialData();
   }
 
   Future<void> toggleSchedule(int index, bool enabled) async {
