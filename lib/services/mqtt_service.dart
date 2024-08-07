@@ -26,7 +26,7 @@ class MqttService {
 
   void _initializeClient() {
     print('Initializing MQTT Client...');
-    final wsUrl = 'ws://$broker';
+    final wsUrl = 'wss://$broker:$port/mqtt';
 
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
       _client = MqttServerClient.withPort(wsUrl, clientIdentifier, port);

@@ -14,8 +14,8 @@ void main() {
           create: (_) {
             print('Creating MqttService...');
             return MqttService(
-              broker: '192.168.0.221',
-              port: 9001,
+              broker: 'broker.hivemq.com',
+              port: 8884,
             );
           },
           dispose: (_, service) {
@@ -56,12 +56,12 @@ class CrawFeed extends StatelessWidget {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final mqttService = Provider.of<MqttService>(context, listen: false);
       mqttService.connect().then((_) {
-        mqttService.publish('feeder/get_status', '');
+        mqttService.publish('pet_feeder_esp32/v1/status/general', '');
       });
     });
 
     return MaterialApp(
-      title: 'Pet Feeder Control',
+      title: 'CrawFeed',
       theme: AppTheme.lightTheme,
       home: PetFeederPage(),
     );
