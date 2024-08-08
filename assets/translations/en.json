@@ -1,0 +1,42 @@
+{
+  "PetFeederPage": {
+    "title": "CrawFeed",
+    "feedTextLabel": "Feed Now",
+    "scheduleStreamError": "Error: {}",
+    "connectionState": "Connection Status: {}",
+    "reconnectButtonTitle": "Reconnect"
+  },
+  "SettingPage": {
+    "appBarTitle":"Settings",
+    "bluetoothSetup":"Set up Bluetooth",
+    "wifiSettings":"Wi-Fi Settings",
+    "setPortionSize":"Set Portion Size",
+    "enableGlobalScheduling":"Enable Global Scheduling",
+    "setLanguage":"Set Language",
+    "darkMode":"Dark Theme",
+    "lightMode":"Light Theme",
+    "languageEN":"English"
+  },
+  "CustomTimePicker": {
+    "am": "AM",
+    "pm": "PM"
+  },
+  "WifiSettingDialog":{
+    "title":"Wi-Fi Settings",
+    "ssIdLabel":"SSID",
+    "passwordLabel":"Password"
+  },
+  "SetPortionDialog":{
+    "title": "Set Portion Size",
+    "portionSizeHint":"Enter portion size"
+  },
+  "SetLanguageDialog":{
+    "title": "Set Language",
+    "languageLabel":"Language"
+  },
+  "ButtonCommonTitles": {
+    "cancel": "Cancel",
+    "ok": "Ok",
+    "save":"Save"
+  }
+}

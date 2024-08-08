@@ -1,12 +1,14 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:pet_feeder_esp_ui/locale_keys.g.dart';
 
 class CustomTimePicker extends StatefulWidget {
   final TimeOfDay initialTime;
 
-  CustomTimePicker({required this.initialTime});
+  const CustomTimePicker({super.key, required this.initialTime});
 
   @override
-  _CustomTimePickerState createState() => _CustomTimePickerState();
+  State<CustomTimePicker> createState() => _CustomTimePickerState();
 }
 
 class _CustomTimePickerState extends State<CustomTimePicker> {
@@ -33,15 +35,15 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     return Dialog(
       backgroundColor: surfaceColor,
       child: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')} ${_isAM ? 'AM' : 'PM'}',
+              '${_hour.toString().padLeft(2, '0')}:${_minute.toString().padLeft(2, '0')} ${_isAM ? LocaleKeys.CustomTimePicker_am : LocaleKeys.CustomTimePicker_pm}',
               style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: onSurfaceColor),
-            ),
-            SizedBox(height: 20),
+            ).tr(),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -68,12 +70,11 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                 Column(
                   children: [
                     ElevatedButton(
-                      child: Text('AM'),
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           _isAM ? primaryColor : theme.colorScheme.secondary,
                         ),
-                        foregroundColor: MaterialStateProperty.all(
+                        foregroundColor: WidgetStateProperty.all(
                           _isAM ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
                         ),
                       ),
@@ -82,15 +83,15 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                           _isAM = true;
                         });
                       },
+                      child: const Text(LocaleKeys.CustomTimePicker_am).tr(),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     ElevatedButton(
-                      child: Text('PM'),
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.all(
+                        backgroundColor: WidgetStateProperty.all(
                           !_isAM ? primaryColor : theme.colorScheme.secondary,
                         ),
-                        foregroundColor: MaterialStateProperty.all(
+                        foregroundColor: WidgetStateProperty.all(
                           !_isAM ? theme.colorScheme.onPrimary : theme.colorScheme.onSecondary,
                         ),
                       ),
@@ -99,30 +100,30 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                           _isAM = false;
                         });
                       },
+                      child: const Text(LocaleKeys.CustomTimePicker_pm).tr(),
                     ),
                   ],
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
-                  child: Text('Cancel'),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(theme.colorScheme.secondary),
-                    foregroundColor: MaterialStateProperty.all(theme.colorScheme.onSecondary),
+                    backgroundColor: WidgetStateProperty.all(theme.colorScheme.secondary),
+                    foregroundColor: WidgetStateProperty.all(theme.colorScheme.onSecondary),
                   ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
+                  child: const Text(LocaleKeys.ButtonCommonTitles_cancel).tr(),
                 ),
                 ElevatedButton(
-                  child: Text('OK'),
                   style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all(primaryColor),
-                    foregroundColor: MaterialStateProperty.all(theme.colorScheme.onPrimary),
+                    backgroundColor: WidgetStateProperty.all(primaryColor),
+                    foregroundColor: WidgetStateProperty.all(theme.colorScheme.onPrimary),
                   ),
                   onPressed: () {
                     int selectedHour;
@@ -133,6 +134,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                     }
                     Navigator.of(context).pop(TimeOfDay(hour: selectedHour, minute: _minute));
                   },
+                  child: const Text(LocaleKeys.ButtonCommonTitles_ok).tr(),
                 ),
               ],
             ),
