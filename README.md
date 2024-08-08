@@ -50,6 +50,12 @@ These instructions will get you a copy of the project up and running on your loc
 - `feeder/get_schedule`: Publish to this topic to request the current schedule.
 - `feeder/schedule_status`: Subscribed to this topic to receive the current schedule status.
 
+## Easy Localization 
+ Enter below code for regenerate `locale_keys.g.dart` file
+
+ `flutter pub run easy_localization:generate -S ./assets/translations -O  ./lib/  -f keys -o locale_keys.g.dart`
+
+
 ## Usage
 
 ### Manual Feeding

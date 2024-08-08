@@ -1,4 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:pet_feeder_esp_ui/locale_keys.g.dart';
 import 'package:provider/provider.dart';
 import '../../application/providers/pet_feeder_provider.dart';
 import '../../domain/models/schedule.dart';
@@ -7,19 +9,21 @@ import 'settings_page.dart';
 import '../../../../core/utils/time_utils.dart';
 
 class PetFeederPage extends StatelessWidget {
+  const PetFeederPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<PetFeederProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CrawFeed'),
+        title: const Text(LocaleKeys.PetFeederPage_title).tr(),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings),
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => SettingsPage()),
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
             ),
           ),
         ],
@@ -47,18 +51,18 @@ class PetFeederPage extends StatelessWidget {
                         onPressed: provider.feedNow,
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Text(
-                      'Feed Now',
+                      LocaleKeys.PetFeederPage_feedTextLabel,
                       style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 18),
-                    ),
+                    ).tr(),
                   ],
                 ),
               ),
             ),
           ),
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             color: Theme.of(context).colorScheme.surface,
             child: Column(
               children: [
@@ -67,9 +71,9 @@ class PetFeederPage extends StatelessWidget {
                   initialData: provider.schedules,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
+                      return const CircularProgressIndicator();
                     }
-                    if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+                    if (snapshot.hasError) return const Text(LocaleKeys.PetFeederPage_scheduleStreamError).tr(args: [snapshot.error.toString()]).tr();
                     final schedules = snapshot.data ?? [];
                     return Column(
                       children: schedules.asMap().entries.map((entry) {
@@ -87,7 +91,7 @@ class PetFeederPage extends StatelessWidget {
                     );
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 StreamBuilder<bool>(
                   stream: provider.connectionStatusStream,
                   initialData: provider.isConnected,
@@ -95,14 +99,14 @@ class PetFeederPage extends StatelessWidget {
                     final isConnected = snapshot.data ?? false;
                     return Column(
                       children: [
-                        Text('Connection Status: ${isConnected ? 'Connected' : 'Disconnected'}'),
+                        const Text(LocaleKeys.PetFeederPage_connectionState).tr(args: [isConnected ? 'Connected' : 'Disconnected']).tr(),
                         if (!isConnected) ...[
-                          SizedBox(height: 10),
-                          Icon(Icons.sync_problem, color: Colors.red, size: 50),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
+                          const Icon(Icons.sync_problem, color: Colors.red, size: 50),
+                          const SizedBox(height: 10),
                           ElevatedButton(
                             onPressed: provider.connect,
-                            child: Text('Reconnect'),
+                            child: const Text(LocaleKeys.PetFeederPage_reconnectButtonTitle).tr(),
                           ),
                         ],
                       ],
