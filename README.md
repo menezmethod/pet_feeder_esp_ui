@@ -3,6 +3,8 @@
 Flutter app for [PetFeederESP](https://github.com/menezmethod/PetFeederESP) — feed your pet on demand or on a
 schedule, provision the feeder's Wi-Fi over Bluetooth, and see status live over MQTT.
 
+<img src="docs/screenshots/home.png" alt="Home screen: feed button, connection status, and a 3-slot feeding schedule with day-of-week labels" width="280">
+
 ## Features
 
 - **Feed now**, with live confirmation from the device (not just "we sent it").
@@ -85,6 +87,9 @@ lib/
 ```
 
 ## Contributing
+
+Contributions are welcome — see `CONTRIBUTING.md` for what's most useful right now
+(translations are a genuinely easy first PR, no code required).
 
 1. Fork the repository.
 2. Create your feature branch (`git checkout -b feature/awesome-feature`).
