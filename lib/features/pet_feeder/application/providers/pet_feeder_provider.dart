@@ -123,7 +123,19 @@ class PetFeederProvider with ChangeNotifier {
     _feedRequestState = FeedRequestState.sending;
     notifyListeners();
 
-    await _repository.feedNow();
+    try {
+      await _repository.feedNow();
+    } catch (e) {
+      // Without this, a throw here (MQTT disconnected mid-publish, etc.)
+      // leaves _feedRequestState stuck at "sending" forever -- the guard at
+      // the top of this method would then refuse every future tap, and the
+      // feed button would be permanently disabled until the app restarts.
+      logDebug('Feed command failed to send: $e');
+      _feedRequestState = FeedRequestState.timedOut;
+      notifyListeners();
+      _scheduleFeedStateReset();
+      return;
+    }
 
     _feedRequestState = FeedRequestState.awaitingConfirmation;
     notifyListeners();

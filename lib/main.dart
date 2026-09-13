@@ -25,11 +25,18 @@ void main() async {
             },
             dispose: (_, service) {
               debugPrint('Disposing MqttService...');
-              service.disconnect();
+              service.dispose();
             },
           ),
           ProxyProvider<MqttService, MqttPetFeederRepository>(
-            update: (_, mqttService, __) {
+            // ProxyProvider's update runs on every dependent rebuild, not
+            // just when MqttService actually changes (which it never does --
+            // it's a plain Provider, not itself a proxy). Reusing `previous`
+            // avoids constructing a second repository with its own duplicate
+            // subscriptions on the same MqttService streams every time this
+            // widget subtree rebuilds for an unrelated reason.
+            update: (_, mqttService, previous) {
+              if (previous != null) return previous;
               debugPrint('Creating MqttPetFeederRepository...');
               return MqttPetFeederRepository(mqttService);
             },

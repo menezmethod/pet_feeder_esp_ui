@@ -83,7 +83,12 @@ class BluetoothService {
 
   Future<void> _scanForDevice() async {
     if (_currentState == BleConnectionState.connected ||
-        _currentState == BleConnectionState.connecting) {
+        _currentState == BleConnectionState.connecting ||
+        _currentState == BleConnectionState.scanning) {
+      // A quick disconnect during discoverServices() can fire both the
+      // device's connectionState listener and the connect() catch block in
+      // the same tick, each calling this -- this guard collapses that to
+      // one scan cycle instead of two overlapping ones.
       return;
     }
     if (ble.FlutterBluePlus.adapterStateNow != ble.BluetoothAdapterState.on) {

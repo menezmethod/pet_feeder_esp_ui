@@ -20,10 +20,10 @@ class MqttService {
   // over the broker's separate websocket+TLS listener.
   static const int _webPort = 9883;
 
-  static List<int> get _pinnedCertDer {
+  static final List<int> _pinnedCertDer = () {
     final body = mqttCaCertPem.split('\n').where((l) => !l.startsWith('-----')).join();
     return base64.decode(body.trim());
-  }
+  }();
 
   static bool _listEquals(List<int> a, List<int> b) {
     if (a.length != b.length) return false;
@@ -36,6 +36,7 @@ class MqttService {
   late MqttClient _client;
   final _connectionStateController = StreamController<MqttConnectionState>.broadcast();
   final _messageController = StreamController<ReceivedMessage>.broadcast();
+  StreamSubscription? _updatesSubscription;
 
   MqttService({
     required this.broker,
@@ -108,6 +109,17 @@ class MqttService {
     _connectionStateController.add(MqttConnectionState.disconnected);
   }
 
+  /// Closes both stream controllers. Separate from disconnect() -- this
+  /// service is a Provider singleton for the app's lifetime, so this only
+  /// ever runs at app teardown, but leaving it out means the controllers
+  /// (and anything still listening) leak for good with no way to reclaim them.
+  Future<void> dispose() async {
+    disconnect();
+    await _updatesSubscription?.cancel();
+    await _connectionStateController.close();
+    await _messageController.close();
+  }
+
   void subscribe(String topic) {
     logDebug('MQTT: Subscribing to $topic');
     _client.subscribe(topic, MqttQos.atLeastOnce);
@@ -125,7 +137,12 @@ class MqttService {
     logDebug('MQTT: Connected');
     _connectionStateController.add(MqttConnectionState.connected);
 
-    _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+    // autoReconnect is on, so _onConnected fires again on every reconnect --
+    // without cancelling the previous subscription first, each reconnect
+    // stacks another listener on the same client.updates stream, and every
+    // message after that gets delivered once per stacked listener.
+    _updatesSubscription?.cancel();
+    _updatesSubscription = _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final recMess = c[0].payload as MqttPublishMessage;
       final pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
       final message = ReceivedMessage(c[0].topic, pt);

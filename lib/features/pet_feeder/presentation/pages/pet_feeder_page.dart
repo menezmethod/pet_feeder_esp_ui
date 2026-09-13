@@ -27,13 +27,17 @@ String _feedStatusLabel(FeedRequestState state) {
 
 String _lastFedLabel(LastFed? lastFed) {
   if (lastFed == null) return 'Not fed yet this session';
-  final t = lastFed.fedAt.toLocal();
-  final timeStr = formatTime(t.hour, t.minute);
   final triggerLabel = switch (lastFed.trigger) {
     'scheduled' => 'scheduled',
     'button' => 'manual button',
     _ => 'app',
   };
+  if (lastFed.fedAt == null) {
+    // Firmware fed before its clock synced -- a real time isn't known yet.
+    return 'Just fed ($triggerLabel, time unknown)';
+  }
+  final t = lastFed.fedAt!.toLocal();
+  final timeStr = formatTime(t.hour, t.minute);
   return 'Last fed $timeStr ($triggerLabel)';
 }
 
