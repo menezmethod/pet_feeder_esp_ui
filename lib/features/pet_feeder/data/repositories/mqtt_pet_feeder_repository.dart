@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import '../../domain/models/schedule.dart';
 import '../../domain/models/last_fed.dart';
-import '../../domain/repositories/pet_feeder_repository.dart';
 import '../../../../services/mqtt_service.dart';
 import '../../../../core/utils/log.dart';
 
@@ -20,7 +19,7 @@ class _Topics {
   static const all = '$prefix/#';
 }
 
-class MqttPetFeederRepository implements PetFeederRepository {
+class MqttPetFeederRepository {
   final MqttService _mqttService;
 
   final _scheduleStreamController = StreamController<List<Schedule>>.broadcast();
@@ -43,22 +42,18 @@ class MqttPetFeederRepository implements PetFeederRepository {
     _subscriptions.add(_mqttService.messageStream.listen(_handleMessage));
   }
 
-  @override
   Future<void> connect() async {
     await _mqttService.connect();
   }
 
-  @override
   Future<void> disconnect() async {
     _mqttService.disconnect();
   }
 
-  @override
   Future<void> feedNow() async {
     _mqttService.publish(_Topics.feed, '');
   }
 
-  @override
   Future<void> updateSchedule(List<Schedule> schedules) async {
     if (!_areSchedulesEqual(_currentSchedules, schedules)) {
       _currentSchedules = List.from(schedules);
@@ -69,7 +64,6 @@ class MqttPetFeederRepository implements PetFeederRepository {
     }
   }
 
-  @override
   Future<void> updateServingSize(int servingSize) async {
     if (_currentServingSize != servingSize) {
       _currentServingSize = servingSize;
@@ -77,7 +71,6 @@ class MqttPetFeederRepository implements PetFeederRepository {
     }
   }
 
-  @override
   Future<void> updateSchedulingEnabled(bool enabled) async {
     if (_currentSchedulingEnabled != enabled) {
       _currentSchedulingEnabled = enabled;
@@ -85,29 +78,22 @@ class MqttPetFeederRepository implements PetFeederRepository {
     }
   }
 
-  @override
   Future<void> requestInitialData() async {
     _mqttService.publish(_Topics.getStatus, '');
     _mqttService.publish(_Topics.getSchedule, '');
   }
 
-  @override
   Stream<List<Schedule>> get scheduleStream => _scheduleStreamController.stream;
 
-  @override
   Stream<int> get servingSizeStream => _servingSizeStreamController.stream;
 
-  @override
   Stream<bool> get schedulingEnabledStream => _schedulingEnabledStreamController.stream;
 
-  @override
   Stream<bool> get connectionStatusStream =>
       _mqttService.connectionStatus.map((status) => status == MqttConnectionState.connected);
 
-  @override
   Stream<LastFed> get lastFedStream => _lastFedStreamController.stream;
 
-  @override
   void dispose() {
     for (final sub in _subscriptions) {
       sub.cancel();

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../../application/providers/pet_feeder_provider.dart';
 import '../../domain/models/schedule.dart';
 import '../../domain/models/last_fed.dart';
-import '../widgets/custom_time_picker.dart';
 import 'settings_page.dart';
 import '../../../../core/utils/time_utils.dart';
 import '../../../../core/theme/glass.dart';
@@ -279,9 +278,9 @@ class PetFeederPage extends StatelessWidget {
                     title: Text(formatTime(hour, minute), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.edit_rounded),
                     onTap: () async {
-                      final result = await showDialog<TimeOfDay>(
+                      final result = await showTimePicker(
                         context: context,
-                        builder: (context) => CustomTimePicker(initialTime: TimeOfDay(hour: hour, minute: minute)),
+                        initialTime: TimeOfDay(hour: hour, minute: minute),
                       );
                       if (result != null) {
                         setState(() {

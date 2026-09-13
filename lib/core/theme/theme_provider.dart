@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:pet_feeder_esp_ui/core/theme/theme_preference.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeProvider extends ChangeNotifier {
-  late bool _isDark;
-  late ThemePreference _preference;
+  static const _themeKey = 'IsDarkMode';
+
+  bool _isDark = false;
   bool get isDark => _isDark;
 
   ThemeProvider() {
-    _isDark = false;
-    _preference = ThemePreference();
     getPreferences();
   }
+
   set isDark(bool value) {
     _isDark = value;
-    _preference.setTheme(value);
     notifyListeners();
+    SharedPreferences.getInstance().then((prefs) => prefs.setBool(_themeKey, value));
   }
 
   getPreferences() async {
-    _isDark = await _preference.getTheme();
+    final prefs = await SharedPreferences.getInstance();
+    _isDark = prefs.getBool(_themeKey) ?? false;
     notifyListeners();
   }
 }

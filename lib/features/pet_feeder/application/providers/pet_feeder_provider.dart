@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../domain/models/schedule.dart';
 import '../../domain/models/last_fed.dart';
-import '../../domain/repositories/pet_feeder_repository.dart';
+import '../../data/repositories/mqtt_pet_feeder_repository.dart';
 import '../../../../core/utils/log.dart';
 
 enum FeedRequestState { idle, sending, awaitingConfirmation, confirmed, timedOut }
 
 class PetFeederProvider with ChangeNotifier {
-  late PetFeederRepository _repository;
+  late MqttPetFeederRepository _repository;
   final List<StreamSubscription> _subscriptions = [];
   Timer? _feedTimeoutTimer;
   Timer? _feedResetTimer;
@@ -41,7 +41,7 @@ class PetFeederProvider with ChangeNotifier {
   Stream<bool> get schedulingEnabledStream => _repository.schedulingEnabledStream;
   Stream<bool> get connectionStatusStream => _repository.connectionStatusStream;
 
-  void updateRepository(PetFeederRepository repository) {
+  void updateRepository(MqttPetFeederRepository repository) {
     logDebug('Updating repository...');
     _cancelSubscriptions();
     _repository = repository;
