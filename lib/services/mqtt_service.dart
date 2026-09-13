@@ -21,7 +21,7 @@ class MqttService {
     required this.broker,
     required this.port,
     String? clientIdentifier,
-  }) : this.clientIdentifier = clientIdentifier ?? 'flutter_pet_feeder_${DateTime.now().millisecondsSinceEpoch}' {
+  }) : clientIdentifier = clientIdentifier ?? 'flutter_pet_feeder_${DateTime.now().millisecondsSinceEpoch}' {
     _initializeClient();
   }
 

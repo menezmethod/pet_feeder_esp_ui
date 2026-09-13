@@ -7,6 +7,7 @@ import 'features/pet_feeder/application/providers/pet_feeder_provider.dart';
 import 'features/pet_feeder/data/repositories/mqtt_pet_feeder_repository.dart';
 import 'features/pet_feeder/presentation/pages/pet_feeder_page.dart';
 import 'services/mqtt_service.dart';
+import 'services/bluetooth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,16 @@ void main() async {
               return previous!..updateRepository(repository);
             },
           ),
+          Provider<BluetoothService>(
+            create: (_) {
+              debugPrint('Creating BluetoothService...');
+              return BluetoothService();
+            },
+            dispose: (_, service) {
+              debugPrint('Disposing BluetoothService...');
+              service.dispose();
+            },
+          ),
         ],
         child: EasyLocalization(
           supportedLocales: const [
@@ -63,13 +74,45 @@ void main() async {
   );
 }
 
-class CrawFeed extends StatelessWidget {
+class CrawFeed extends StatefulWidget {
   const CrawFeed({super.key});
 
-  // Connection is owned by PetFeederProvider (created above, connects in its
-  // own constructor) -- this widget used to also connect and publish an
-  // empty payload to status/general here, which was both a redundant second
-  // connect and, worse, would stomp a retained status message with nothing.
+  @override
+  State<CrawFeed> createState() => _CrawFeedState();
+}
+
+// MQTT connection is owned by PetFeederProvider (connects in its own
+// constructor) -- this widget's only lifecycle job is BLE: start watching
+// for the feeder when the app is in the foreground, stop when it isn't.
+// That's the entire mechanism behind "pairing is seamless as long as the
+// app is open" -- no scanning happens otherwise, and no manual BLE app
+// (LightBlue or similar) should be needed for normal WiFi provisioning.
+class _CrawFeedState extends State<CrawFeed> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BluetoothService>().startWatching();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final bluetooth = context.read<BluetoothService>();
+    if (state == AppLifecycleState.resumed) {
+      bluetooth.startWatching();
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      bluetooth.stopWatching();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

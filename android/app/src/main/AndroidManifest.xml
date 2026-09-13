@@ -1,4 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- BLE was previously used with zero permissions declared anywhere in this
+         manifest -- depending on Android version this either silently returns no
+         scan results or throws a SecurityException. Android 12+ (API 31+) uses
+         BLUETOOTH_SCAN/BLUETOOTH_CONNECT instead of the legacy pair below.
+         neverForLocation is correct here: this app only looks for one named
+         device to configure WiFi, it never derives physical location from scan
+         results, so the location runtime-permission prompt isn't needed. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+
     <application
         android:label="pet_feeder_esp_ui"
         android:name="${applicationName}"
