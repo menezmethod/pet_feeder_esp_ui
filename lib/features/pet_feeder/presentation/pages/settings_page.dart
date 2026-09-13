@@ -148,47 +148,86 @@ class SettingsPage extends StatelessWidget {
 
     String ssid = '';
     String password = '';
+    bool manualEntry = bluetoothService.lastWifiNetworks.isEmpty;
 
     await showDialog(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final canSave = ssid.isNotEmpty && password.isNotEmpty;
-            return AlertDialog(
-              title: const Text(LocaleKeys.WifiSettingDialog_title).tr(),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(labelText: LocaleKeys.WifiSettingDialog_ssIdLabel.tr()),
-                    onChanged: (value) => setState(() => ssid = value),
+        return StreamBuilder<List<WifiNetwork>>(
+          stream: bluetoothService.wifiNetworks,
+          initialData: bluetoothService.lastWifiNetworks,
+          builder: (context, snapshot) {
+            final networks = snapshot.data ?? [];
+            return StatefulBuilder(
+              builder: (context, setState) {
+                final canSave = ssid.isNotEmpty && password.isNotEmpty;
+                return AlertDialog(
+                  title: const Text(LocaleKeys.WifiSettingDialog_title).tr(),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!manualEntry && networks.isNotEmpty) ...[
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 240),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: networks.length,
+                              itemBuilder: (context, index) {
+                                final net = networks[index];
+                                return ListTile(
+                                  leading: Icon(net.secure ? Icons.wifi_lock_rounded : Icons.wifi_rounded),
+                                  title: Text(net.ssid),
+                                  selected: net.ssid == ssid,
+                                  onTap: () => setState(() => ssid = net.ssid),
+                                );
+                              },
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() => manualEntry = true),
+                            child: const Text('Enter network name manually'),
+                          ),
+                        ] else ...[
+                          TextField(
+                            decoration: InputDecoration(labelText: LocaleKeys.WifiSettingDialog_ssIdLabel.tr()),
+                            onChanged: (value) => setState(() => ssid = value),
+                          ),
+                          if (networks.isNotEmpty)
+                            TextButton(
+                              onPressed: () => setState(() => manualEntry = false),
+                              child: const Text('Pick from nearby networks'),
+                            ),
+                        ],
+                        TextField(
+                          decoration: InputDecoration(labelText: LocaleKeys.WifiSettingDialog_passwordLabel.tr()),
+                          onChanged: (value) => setState(() => password = value),
+                          obscureText: true,
+                        ),
+                      ],
+                    ),
                   ),
-                  TextField(
-                    decoration: InputDecoration(labelText: LocaleKeys.WifiSettingDialog_passwordLabel.tr()),
-                    onChanged: (value) => setState(() => password = value),
-                    obscureText: true,
-                  ),
-                ],
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: !canSave
-                      ? null
-                      : () async {
-                          final navigator = Navigator.of(context);
-                          final messenger = ScaffoldMessenger.of(context);
-                          final sent = await bluetoothService.sendWifiCredentials(ssid, password);
-                          navigator.pop();
-                          messenger.showSnackBar(SnackBar(
-                            content: Text(sent
-                                ? 'WiFi credentials sent -- the feeder will connect shortly.'
-                                : 'Could not send WiFi credentials. Move closer and try again.'),
-                          ));
-                        },
-                  child: const Text(LocaleKeys.ButtonCommonTitles_save).tr(),
-                ),
-              ],
+                  actions: [
+                    ElevatedButton(
+                      onPressed: !canSave
+                          ? null
+                          : () async {
+                              final navigator = Navigator.of(context);
+                              final messenger = ScaffoldMessenger.of(context);
+                              final sent = await bluetoothService.sendWifiCredentials(ssid, password);
+                              navigator.pop();
+                              messenger.showSnackBar(SnackBar(
+                                content: Text(sent
+                                    ? 'WiFi credentials sent -- the feeder will connect shortly.'
+                                    : 'Could not send WiFi credentials. Move closer and try again.'),
+                              ));
+                            },
+                      child: const Text(LocaleKeys.ButtonCommonTitles_save).tr(),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );

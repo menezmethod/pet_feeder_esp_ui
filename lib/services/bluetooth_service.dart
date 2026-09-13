@@ -5,6 +5,17 @@ import '../core/utils/log.dart';
 
 enum BleConnectionState { disconnected, scanning, connecting, connected }
 
+class WifiNetwork {
+  final String ssid;
+  final bool secure;
+  const WifiNetwork({required this.ssid, required this.secure});
+
+  factory WifiNetwork.fromJson(Map<String, dynamic> json) => WifiNetwork(
+        ssid: json['ssid'] as String,
+        secure: json['secure'] as bool? ?? true,
+      );
+}
+
 /// Watches for the feeder over BLE and connects automatically while
 /// [startWatching] is active -- callers drive that from app foreground/
 /// background so pairing is seamless exactly as long as the app is open,
@@ -13,15 +24,23 @@ class BluetoothService {
   static const _deviceName = 'ESP_FEEDER';
   static const _serviceUuidFragment = '00ff';
   static const _wifiCharUuidFragment = 'ff01';
+  static const _wifiScanCharUuidFragment = 'ff02';
   static const _scanWindow = Duration(seconds: 10);
 
   ble.BluetoothDevice? _device;
   ble.BluetoothCharacteristic? _wifiCharacteristic;
+  ble.BluetoothCharacteristic? _wifiScanCharacteristic;
   StreamSubscription<List<ble.ScanResult>>? _scanSubscription;
   StreamSubscription<ble.BluetoothConnectionState>? _deviceStateSubscription;
   StreamSubscription<ble.BluetoothAdapterState>? _adapterStateSubscription;
+  StreamSubscription<List<int>>? _wifiScanValueSubscription;
   Timer? _rescanTimer;
   bool _watching = false;
+
+  final _wifiNetworksController = StreamController<List<WifiNetwork>>.broadcast();
+  Stream<List<WifiNetwork>> get wifiNetworks => _wifiNetworksController.stream;
+  List<WifiNetwork> _lastWifiNetworks = [];
+  List<WifiNetwork> get lastWifiNetworks => _lastWifiNetworks;
 
   final _stateController = StreamController<BleConnectionState>.broadcast();
   Stream<BleConnectionState> get state => _stateController.stream;
@@ -108,6 +127,8 @@ class BluetoothService {
       _deviceStateSubscription = device.connectionState.listen((connState) {
         if (connState == ble.BluetoothConnectionState.disconnected) {
           _wifiCharacteristic = null;
+          _wifiScanCharacteristic = null;
+          _wifiScanValueSubscription?.cancel();
           _setState(BleConnectionState.disconnected);
           if (_watching) _scanForDevice();
         }
@@ -125,11 +146,43 @@ class BluetoothService {
         (c) => c.uuid.toString().toLowerCase().contains(_wifiCharUuidFragment),
         orElse: () => throw StateError('Feeder WiFi characteristic not found'),
       );
+
+      // Optional: older firmware may not have this characteristic yet.
+      // Absence just means the WiFi dialog falls back to manual SSID entry.
+      try {
+        _wifiScanCharacteristic = service.characteristics.firstWhere(
+          (c) => c.uuid.toString().toLowerCase().contains(_wifiScanCharUuidFragment),
+        );
+        await _wifiScanCharacteristic!.setNotifyValue(true);
+        await _wifiScanValueSubscription?.cancel();
+        _wifiScanValueSubscription = _wifiScanCharacteristic!.lastValueStream.listen(_handleWifiScanValue);
+        // Firmware populates this a moment after connect -- read whatever it
+        // has now too, in case the notify arrives before this listener does.
+        final initial = await _wifiScanCharacteristic!.read();
+        _handleWifiScanValue(initial);
+      } catch (e) {
+        logDebug('BLE: WiFi scan characteristic unavailable: $e');
+      }
+
       _setState(BleConnectionState.connected);
     } catch (e) {
       logDebug('BLE: connect failed: $e');
       _setState(BleConnectionState.disconnected);
       if (_watching) _scanForDevice();
+    }
+  }
+
+  void _handleWifiScanValue(List<int> bytes) {
+    if (bytes.isEmpty) return;
+    try {
+      final data = json.decode(utf8.decode(bytes)) as Map<String, dynamic>;
+      final networks = (data['networks'] as List)
+          .map((n) => WifiNetwork.fromJson(n as Map<String, dynamic>))
+          .toList();
+      _lastWifiNetworks = networks;
+      _wifiNetworksController.add(networks);
+    } catch (e) {
+      logDebug('BLE: failed to parse WiFi scan payload: $e');
     }
   }
 
@@ -156,7 +209,9 @@ class BluetoothService {
     await stopWatching();
     await _deviceStateSubscription?.cancel();
     await _adapterStateSubscription?.cancel();
+    await _wifiScanValueSubscription?.cancel();
     await _device?.disconnect();
     await _stateController.close();
+    await _wifiNetworksController.close();
   }
 }
