@@ -32,6 +32,10 @@ void main() async {
               debugPrint('Creating MqttPetFeederRepository...');
               return MqttPetFeederRepository(mqttService);
             },
+            dispose: (_, repository) {
+              debugPrint('Disposing MqttPetFeederRepository...');
+              repository.dispose();
+            },
           ),
           ChangeNotifierProxyProvider<MqttPetFeederRepository, PetFeederProvider>(
             create: (context) {
@@ -59,26 +63,13 @@ void main() async {
   );
 }
 
-class CrawFeed extends StatefulWidget {
+class CrawFeed extends StatelessWidget {
   const CrawFeed({super.key});
 
-  @override
-  State<CrawFeed> createState() => _CrawFeedState();
-}
-
-class _CrawFeedState extends State<CrawFeed> {
-  @override
-  void initState() {
-    super.initState();
-    debugPrint('Building CrawFeed...');
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mqttService = Provider.of<MqttService>(context, listen: false);
-      mqttService.connect().then((_) {
-        mqttService.publish('pet_feeder_esp32/v1/status/general', '');
-      });
-    });
-  }
-
+  // Connection is owned by PetFeederProvider (created above, connects in its
+  // own constructor) -- this widget used to also connect and publish an
+  // empty payload to status/general here, which was both a redundant second
+  // connect and, worse, would stomp a retained status message with nothing.
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

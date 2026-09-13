@@ -4,6 +4,7 @@ import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../core/utils/log.dart';
 
 enum MqttConnectionState { disconnected, connecting, connected }
 
@@ -25,7 +26,7 @@ class MqttService {
   }
 
   void _initializeClient() {
-    print('Initializing MQTT Client...');
+    logDebug('Initializing MQTT Client...');
     final wsUrl = 'wss://$broker:$port/mqtt';
 
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
@@ -46,7 +47,6 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(clientIdentifier)
-        .keepAliveFor(20)
         .withWillTopic('willtopic')
         .withWillMessage('My Will message')
         .startClean()
@@ -60,38 +60,36 @@ class MqttService {
   Future<void> connect() async {
     _connectionStateController.add(MqttConnectionState.connecting);
     try {
-      print('MQTT: Connecting to broker $broker:$port');
+      logDebug('MQTT: Connecting to broker $broker:$port');
       await _client.connect();
     } catch (e) {
-      print('MQTT: Exception during connect: $e');
+      logDebug('MQTT: Exception during connect: $e');
       disconnect();
     }
   }
 
   void disconnect() {
-    print('MQTT: Disconnecting');
+    logDebug('MQTT: Disconnecting');
     _client.disconnect();
     _connectionStateController.add(MqttConnectionState.disconnected);
   }
 
   void subscribe(String topic) {
-    print('MQTT: Subscribing to $topic');
+    logDebug('MQTT: Subscribing to $topic');
     _client.subscribe(topic, MqttQos.atLeastOnce);
   }
 
   void publish(String topic, String message) {
-    print('MQTT: Publishing to $topic: $message');
+    logDebug('MQTT: Publishing to $topic: $message');
     final builder = MqttClientPayloadBuilder();
     builder.addString(message);
     final messageId = _client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-    print('MQTT: Published message with ID: $messageId');
+    logDebug('MQTT: Published message with ID: $messageId');
   }
 
   void _onConnected() {
-    print('MQTT: Connected');
+    logDebug('MQTT: Connected');
     _connectionStateController.add(MqttConnectionState.connected);
-
-    Map<String, String> lastMessages = {};
 
     _client.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
       final recMess = c[0].payload as MqttPublishMessage;
@@ -100,27 +98,26 @@ class MqttService {
       final messageId = recMess.variableHeader?.messageIdentifier ?? -1;
       final qos = recMess.header?.qos ?? MqttQos.atMostOnce;
 
-      if (lastMessages[message.topic] != message.payload) {
-        lastMessages[message.topic] = message.payload;
-        print('MQTT: Received message - Topic: ${message.topic}, Payload: ${message.payload}, Message ID: $messageId, QoS: $qos');
-        _messageController.add(message);
-      } else {
-        print('MQTT: Ignored duplicate message - Topic: ${message.topic}, Payload: ${message.payload}, Message ID: $messageId, QoS: $qos');
-      }
+      // No dedup here: MQTT only delivers a message when the broker actually
+      // received a publish. Two identical payloads in a row (e.g. the same
+      // feed confirmation twice) are two real events, not one duplicate --
+      // dropping the second one previously made a double-feed invisible.
+      logDebug('MQTT: Received message - Topic: ${message.topic}, Payload: ${message.payload}, Message ID: $messageId, QoS: $qos');
+      _messageController.add(message);
     });
   }
 
   void _onDisconnected() {
-    print('MQTT: Disconnected');
+    logDebug('MQTT: Disconnected');
     _connectionStateController.add(MqttConnectionState.disconnected);
   }
 
   void _onSubscribed(String topic) {
-    print('MQTT: Subscribed to topic: $topic');
+    logDebug('MQTT: Subscribed to topic: $topic');
   }
 
   void _pongCallback() {
-    print('MQTT: Ping response received');
+    logDebug('MQTT: Ping response received');
   }
 }
 

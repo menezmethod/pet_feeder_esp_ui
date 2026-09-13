@@ -1,4 +1,5 @@
 import '../models/schedule.dart';
+import '../models/last_fed.dart';
 
 abstract class PetFeederRepository {
   Future<void> connect();
@@ -12,4 +13,9 @@ abstract class PetFeederRepository {
   Stream<int> get servingSizeStream;
   Stream<bool> get schedulingEnabledStream;
   Stream<bool> get connectionStatusStream;
+  Stream<LastFed> get lastFedStream;
+
+  /// Cancels internal subscriptions and closes internal stream controllers.
+  /// The repository owns those resources, so it owns their teardown too.
+  void dispose();
 }

@@ -20,4 +20,16 @@ class Schedule {
       'enabled': enabled,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Schedule &&
+          runtimeType == other.runtimeType &&
+          hour == other.hour &&
+          minute == other.minute &&
+          enabled == other.enabled;
+
+  @override
+  int get hashCode => Object.hash(hour, minute, enabled);
 }
