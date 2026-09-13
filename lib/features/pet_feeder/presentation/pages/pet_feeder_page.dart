@@ -214,26 +214,41 @@ class PetFeederPage extends StatelessWidget {
                       child: Text('Waiting for the feeder\'s schedule...', style: TextStyle(color: t.inkSoft, fontSize: 14)),
                     );
                   }
-                  return GlassCard(
-                    radius: 20,
-                    child: Column(
-                      children: schedules.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final schedule = entry.value;
-                        return GlassRow(
-                          showDivider: idx > 0,
-                          icon: const GlassIconChip(icon: Icons.schedule_rounded),
-                          title: formatTime(schedule.hour, schedule.minute),
-                          subtitle: idx == 0 ? 'Morning feeding' : 'Feeding ${idx + 1}',
-                          onTap: () => _showCustomTimePicker(context, idx, schedule, provider),
-                          trailing: Switch(
-                            value: schedule.enabled,
-                            activeColor: t.accent,
-                            onChanged: (value) => provider.toggleSchedule(idx, value),
+                  return Column(
+                    children: [
+                      GlassCard(
+                        radius: 20,
+                        child: Column(
+                          children: schedules.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final schedule = entry.value;
+                            return GlassRow(
+                              showDivider: idx > 0,
+                              icon: const GlassIconChip(icon: Icons.schedule_rounded),
+                              title: formatTime(schedule.hour, schedule.minute),
+                              subtitle: describeDays(schedule.days),
+                              onTap: () => _showScheduleEditDialog(context, idx, schedule, provider),
+                              trailing: Switch(
+                                value: schedule.enabled,
+                                activeColor: t.accent,
+                                onChanged: (value) => provider.toggleSchedule(idx, value),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      if (schedules.length < PetFeederProvider.maxSchedules) ...[
+                        const SizedBox(height: 10),
+                        GlassCard(
+                          radius: 20,
+                          child: GlassRow(
+                            icon: Icon(Icons.add_rounded, size: 18, color: t.accent),
+                            title: 'Add feeding time',
+                            onTap: () => provider.addSchedule(),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      ],
+                    ],
                   );
                 },
               ),
@@ -244,18 +259,76 @@ class PetFeederPage extends StatelessWidget {
     );
   }
 
-  void _showCustomTimePicker(BuildContext context, int index, Schedule schedule, PetFeederProvider provider) async {
-    final result = await showDialog<TimeOfDay>(
+  void _showScheduleEditDialog(BuildContext context, int index, Schedule schedule, PetFeederProvider provider) async {
+    int hour = schedule.hour;
+    int minute = schedule.minute;
+    int days = schedule.days;
+
+    await showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return CustomTimePicker(
-          initialTime: TimeOfDay(hour: schedule.hour, minute: schedule.minute),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Feeding Time'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(formatTime(hour, minute), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.edit_rounded),
+                    onTap: () async {
+                      final result = await showDialog<TimeOfDay>(
+                        context: context,
+                        builder: (context) => CustomTimePicker(initialTime: TimeOfDay(hour: hour, minute: minute)),
+                      );
+                      if (result != null) {
+                        setState(() {
+                          hour = result.hour;
+                          minute = result.minute;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(7, (i) {
+                      final bit = 1 << i;
+                      final active = (days & bit) != 0;
+                      return ChoiceChip(
+                        label: Text(weekdayLabels[i]),
+                        selected: active,
+                        onSelected: (_) => setState(() => days ^= bit),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    provider.removeSchedule(index);
+                  },
+                  child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                ),
+                ElevatedButton(
+                  onPressed: days == 0
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                          provider.updateScheduleTimeAndDays(index, hour, minute, days);
+                        },
+                  child: const Text(LocaleKeys.ButtonCommonTitles_save).tr(),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-
-    if (result != null) {
-      provider.updateScheduleTime(index, result.hour, result.minute);
-    }
   }
 }

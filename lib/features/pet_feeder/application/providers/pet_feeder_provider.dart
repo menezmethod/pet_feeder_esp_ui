@@ -169,24 +169,56 @@ class PetFeederProvider with ChangeNotifier {
     await _repository.requestInitialData();
   }
 
+  static const int maxSchedules = 6;
+
   Future<void> toggleSchedule(int index, bool enabled) async {
     List<Schedule> updatedSchedules = List.from(_schedules);
-    updatedSchedules[index] = Schedule(
-      hour: updatedSchedules[index].hour,
-      minute: updatedSchedules[index].minute,
-      enabled: enabled,
-    );
+    final s = updatedSchedules[index];
+    updatedSchedules[index] = Schedule(hour: s.hour, minute: s.minute, enabled: enabled, days: s.days);
     await updateSchedule(updatedSchedules);
   }
 
   Future<void> updateScheduleTime(int index, int hour, int minute) async {
     List<Schedule> updatedSchedules = List.from(_schedules);
-    updatedSchedules[index] = Schedule(
-      hour: hour,
-      minute: minute,
-      enabled: updatedSchedules[index].enabled,
-    );
+    final s = updatedSchedules[index];
+    updatedSchedules[index] = Schedule(hour: hour, minute: minute, enabled: s.enabled, days: s.days);
     await updateSchedule(updatedSchedules);
+  }
+
+  Future<void> updateScheduleDays(int index, int days) async {
+    List<Schedule> updatedSchedules = List.from(_schedules);
+    final s = updatedSchedules[index];
+    updatedSchedules[index] = Schedule(hour: s.hour, minute: s.minute, enabled: s.enabled, days: days);
+    await updateSchedule(updatedSchedules);
+  }
+
+  /// Combined time+days update in one publish. Calling updateScheduleTime()
+  /// and updateScheduleDays() back to back would race: _schedules only
+  /// reflects the device's echo back over MQTT, which the second call would
+  /// not have seen yet, silently discarding whichever change went first.
+  Future<void> updateScheduleTimeAndDays(int index, int hour, int minute, int days) async {
+    List<Schedule> updatedSchedules = List.from(_schedules);
+    final s = updatedSchedules[index];
+    updatedSchedules[index] = Schedule(hour: hour, minute: minute, enabled: s.enabled, days: days);
+    await updateSchedule(updatedSchedules);
+  }
+
+  /// Appends a new slot (default: an hour after the last one, every day,
+  /// enabled) as long as there's room under the firmware's MAX_SCHEDULES cap.
+  Future<void> addSchedule() async {
+    if (_schedules.length >= maxSchedules) return;
+    final last = _schedules.isNotEmpty ? _schedules.last : null;
+    final hour = last != null ? (last.hour + 1) % 24 : 8;
+    final updated = [
+      ..._schedules,
+      Schedule(hour: hour, minute: last?.minute ?? 0, enabled: true, days: allDays),
+    ];
+    await updateSchedule(updated);
+  }
+
+  Future<void> removeSchedule(int index) async {
+    final updated = List<Schedule>.from(_schedules)..removeAt(index);
+    await updateSchedule(updated);
   }
 
   @override
