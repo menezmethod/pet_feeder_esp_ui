@@ -73,6 +73,14 @@ Wi-Fi provisioning is separate: it happens over Bluetooth (GATT characteristic `
 - Broker credentials live in `lib/core/config/secrets.dart`, gitignored, never committed.
 - BLE Wi-Fi provisioning has no pairing/bonding at the protocol level — see the firmware README for that trade-off; it applies to whatever app talks to the device, not just this one.
 
+## Pending dependency upgrades
+
+Dependencies are kept up to date within their existing version constraints (see commit
+history). One is deliberately left on an older major version: `dropdown_button2` (2.3.9 →
+3.1.0 is available) is a breaking API change for a widget with exactly one call site — the
+language picker in `SettingsPage`. Low value for the risk of a routine bump; do it as its
+own change with its own test pass, not bundled in.
+
 ## Project structure
 
 ```
