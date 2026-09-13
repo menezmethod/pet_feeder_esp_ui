@@ -19,8 +19,8 @@ void main() async {
             create: (_) {
               debugPrint('Creating MqttService...');
               return MqttService(
-                broker: 'broker.hivemq.com',
-                port: 8884,
+                broker: '47.203.87.233',
+                port: 8883,
               );
             },
             dispose: (_, service) {

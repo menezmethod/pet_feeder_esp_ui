@@ -1,0 +1,24 @@
+/// Public half of the self-hosted broker's self-signed certificate.
+/// Safe to commit -- this is not the private key. Must match
+/// pet_feeder_esp/src/mqtt_ca_cert.h exactly (same broker, same cert).
+const String mqttCaCertPem = '''
+-----BEGIN CERTIFICATE-----
+MIIDKjCCAhKgAwIBAgIUWYbFTFmGbSjzGqsyc2MsLi59xHgwDQYJKoZIhvcNAQEL
+BQAwGTEXMBUGA1UEAwwOcGV0ZmVlZGVyLW1xdHQwHhcNMjYwOTEzMTQzMzM3WhcN
+MzYwOTEwMTQzMzM3WjAZMRcwFQYDVQQDDA5wZXRmZWVkZXItbXF0dDCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBAMeg/4mqIrwnJ6wFvGd1Eld/zS6mFY/V
+SVWY0AvhExnnWMVtVq3LIQILOxUhcQhpH9RqB8zIidhvuGsNgaO2b6Iovzqkn55z
+6jwVpHIe6icZyRMDrwWb/jCMILMtswx2W5AEQzzLknzJ2tz9zHW+4WJpF8UVYel4
+1oCP8qfFpcUpUntPRd3VbyQMbIL6u7fMsLBWZXxt7eK5wyrKpmA17YxHwMTlzEjX
+PneDdnYh44buO7+DK21lmgW9k0oLXkcRUTUknQBS3bWVWZdYejYH1IjqxzyezosP
+bqkZZHGH+3W0DTjUZV3R4UQQn3YB3cTF0WjlWKg1t9UMbUnCOzmnTfsCAwEAAaNq
+MGgwHQYDVR0OBBYEFIj6LtuNTpTnAeP3fp20+ew3GpKYMB8GA1UdIwQYMBaAFIj6
+LtuNTpTnAeP3fp20+ew3GpKYMA8GA1UdEwEB/wQFMAMBAf8wFQYDVR0RBA4wDIcE
+L8tX6YcEZHYpYzANBgkqhkiG9w0BAQsFAAOCAQEADd1CfUyPhrtUnJFKm6Auzk81
+opzVsIHNsUEGmJSryCbbIDUr0mMA+iOadtd06dNH459T7R0/29IbVSf6XPggIlij
+2gYrz3mjc1KICoKjTF8DFhWMoADrADxvXUJ7a6gIEpyzry+qaY0jTmCmBBTmxNf6
+TPUkTF92KT0eloiTIA+LRMzKViEV8oqlMIUlMmc1A042nJmeNNmSNWaQKlhSXYpE
+zaXUfsFbmtAXgeExGRTrGWpoT5cOfGoRslMGRq/TCTJDFW4dRZKKTV9RHBpqCGmW
+HI5iDNT3JsjuEMLxMTF92A9SEPyBoiPpnGp85gkbiXMzMvxzAhmpFcPrR+wIfg==
+-----END CERTIFICATE-----
+''';

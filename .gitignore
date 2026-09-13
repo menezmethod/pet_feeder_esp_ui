@@ -7,29 +7,12 @@
 build/
 flutter_export_environment.sh
 flutter_export_environment.bat
-.pubspect.lock
-.dart_tool/
-.dart_tool/
+.pub/
+.pub-cache/
+packages/
 
-# Android Studio
-.idea/
-*.iml
-*.ipr
-*.iws
-.idea/
-.gradle/
-local.properties
-
-# Miscellaneous
-*.log
-*.tmp
-*.swp
-*.DS_Store
-*.sublime-workspace
-*.vscode/
-*.sublime-project
-*.swp
-*~
+# Secrets -- see lib/core/config/secrets.dart.example for the template
+lib/core/config/secrets.dart
 
 # Android
 android/app/debug
@@ -39,6 +22,10 @@ android/app/google-services.json
 android/local.properties
 android/.gradle
 android/.idea
+*.apk
+*.ap_
+*.keystore
+*.jks
 
 # iOS
 ios/Pods/
@@ -53,16 +40,11 @@ ios/Flutter/Generated.xcconfig
 ios/Flutter/app.flx
 ios/Flutter/app.zip
 ios/Flutter/flutter_assets
-ios/Flutter/Generated.xcconfig
 ios/Flutter/ephemeral/.last_build_id
 ios/Flutter/ephemeral/Flutter-*
 
 # Web
 web/.dart_tool/
-web/ios/Flutter/Generated.xcconfig
-web/ios/Flutter/ephemeral/.last_build_id
-web/ios/Flutter/flutter_assets
-web/ios/Flutter/App.framework
 
 # macOS
 macos/.dart_tool/
@@ -72,7 +54,6 @@ macos/Flutter/flutter_assets
 macos/Flutter/App.framework
 macos/.flutter-plugins
 macos/.flutter-plugins-dependencies
-macos/Flutter/GeneratedPluginRegistrant.*
 macos/Pods/
 
 # Windows
@@ -83,60 +64,23 @@ linux/flutter/ephemeral
 linux/.dart_tool/
 linux/.flutter-plugins
 linux/.flutter-plugins-dependencies
-linux/Flutter/GeneratedPluginRegistrant.*
 linux/Flutter/ephemeral/.last_build_id
 linux/Flutter/flutter_assets
 linux/Flutter/App.framework
 
-# Intellij related
-*.iml
+# Editors
 .idea/
-.idea/*
-
-# VS Code
+*.iml
+*.ipr
+*.iws
 .vscode/
+.sublime-workspace
+.sublime-project
 
-# Miscellaneous
+# Misc
+*.log
+*.tmp
 *.swp
 *~
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.flutter-versions
-build/
-packages/
-.packages
-.pub/
-.pub-cache/
-pointers.yaml
-dependency_overrides.yaml
-pubspec.lock
-pointers.lock
-.dart_tool/
-flutter_export_environment.bat
-flutter_export_environment.sh
-.idea/
-*.iml
-build/
-*.apk
-*.ap_
-*.keystore
-*.jks
-pubspec.lock
-.pubspect.lock
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-build/
-.idea/
-*.iml
-.gradle/
+.DS_Store
 local.properties
-flutter_export_environment.sh
-flutter_export_environment.bat
-pubspec.lock
-pubspec.yaml
-README.md
-LICENSE
-.gitignore

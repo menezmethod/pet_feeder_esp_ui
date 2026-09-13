@@ -1,10 +1,13 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:convert' show base64;
+import 'dart:io' show Platform, X509Certificate;
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:mqtt_client/mqtt_browser_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../core/utils/log.dart';
+import '../core/config/mqtt_ca_cert.dart';
+import '../core/config/secrets.dart';
 
 enum MqttConnectionState { disconnected, connecting, connected }
 
@@ -12,6 +15,23 @@ class MqttService {
   final String broker;
   final int port;
   final String clientIdentifier;
+
+  // Browsers can't open raw TLS sockets -- only the web build uses this,
+  // over the broker's separate websocket+TLS listener.
+  static const int _webPort = 9883;
+
+  static List<int> get _pinnedCertDer {
+    final body = mqttCaCertPem.split('\n').where((l) => !l.startsWith('-----')).join();
+    return base64.decode(body.trim());
+  }
+
+  static bool _listEquals(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 
   late MqttClient _client;
   final _connectionStateController = StreamController<MqttConnectionState>.broadcast();
@@ -27,14 +47,27 @@ class MqttService {
 
   void _initializeClient() {
     logDebug('Initializing MQTT Client...');
-    final wsUrl = 'wss://$broker:$port/mqtt';
 
     if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
-      _client = MqttServerClient.withPort(wsUrl, clientIdentifier, port);
-      (_client as MqttServerClient).useWebSocket = true;
-      (_client as MqttServerClient).websocketProtocols = ['mqtt'];
+      // Raw TCP + TLS, matching the firmware's own connection to the same
+      // broker -- no websocket layer needed off the browser.
+      //
+      // Exact-certificate pinning via onBadCertificate, not
+      // SecurityContext.setTrustedCertificatesBytes: that call does not
+      // reliably trust a self-signed leaf as its own root on this platform
+      // (verified with a minimal repro outside Flutter -- trust-chain
+      // validation fails even with CA:TRUE set and the right SAN). Pinning
+      // the exact DER bytes is stronger anyway for a single fixed cert.
+      final serverClient = MqttServerClient.withPort(broker, clientIdentifier, port);
+      serverClient.secure = true;
+      serverClient.onBadCertificate = (dynamic cert) {
+        final presented = (cert as X509Certificate).der;
+        return _listEquals(presented, _pinnedCertDer);
+      };
+      _client = serverClient;
     } else {
-      _client = MqttBrowserClient.withPort(wsUrl, clientIdentifier, port);
+      final wsUrl = 'wss://$broker:$_webPort/mqtt';
+      _client = MqttBrowserClient.withPort(wsUrl, clientIdentifier, _webPort);
     }
 
     _client.logging(on: true);
@@ -47,6 +80,7 @@ class MqttService {
 
     final connMess = MqttConnectMessage()
         .withClientIdentifier(clientIdentifier)
+        .authenticateAs(mqttUsername, mqttPassword)
         .withWillTopic('willtopic')
         .withWillMessage('My Will message')
         .startClean()
