@@ -32,12 +32,12 @@ Push notifications for feed confirmations/failures are planned but not yet built
    cd pet_feeder_esp_ui
    flutter pub get
    ```
-2. Copy the secrets template and fill in your broker credentials:
+2. Copy the secrets template and fill in your broker address and credentials:
    ```bash
    cp lib/core/config/secrets.dart.example lib/core/config/secrets.dart
    ```
    `secrets.dart` is gitignored — never commit real credentials.
-3. Point `broker`/`port` in `lib/main.dart` (where `MqttService` is constructed) at your own broker, and put its CA certificate in `lib/core/config/mqtt_ca_cert.dart`.
+3. If your broker does not use port 8883, change `port` in `lib/main.dart` (where `MqttService` is constructed), and put its CA certificate in `lib/core/config/mqtt_ca_cert.dart`.
 4. Run it:
    ```bash
    flutter run

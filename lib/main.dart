@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:pet_feeder_esp_ui/core/theme/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'core/config/secrets.dart';
 import 'core/theme/app_theme.dart';
 import 'features/pet_feeder/application/providers/pet_feeder_provider.dart';
 import 'features/pet_feeder/data/repositories/mqtt_pet_feeder_repository.dart';
@@ -19,7 +20,7 @@ void main() async {
             create: (_) {
               debugPrint('Creating MqttService...');
               return MqttService(
-                broker: '47.203.87.233',
+                broker: mqttBroker,
                 port: 8883,
               );
             },
