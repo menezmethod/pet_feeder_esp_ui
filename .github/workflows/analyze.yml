@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: "3.27.1"
           cache: true
       - run: flutter pub get
       - name: Use the secrets template so analysis needs no real credentials
