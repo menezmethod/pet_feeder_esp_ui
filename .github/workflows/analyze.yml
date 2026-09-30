@@ -1,0 +1,18 @@
+name: Analyze
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.27.1"
+          cache: true
+      - run: flutter pub get
+      - name: Use the secrets template so analysis needs no real credentials
+        run: cp lib/core/config/secrets.dart.example lib/core/config/secrets.dart
+      - run: flutter analyze
